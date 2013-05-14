@@ -246,7 +246,10 @@ void init_pyargv() {
 
 	char *argv0 = "uwsgi";
 
-	if (up.pyrun) {
+	if (up.pymain) {
+		argv0 = uwsgi.argv[0];
+	}
+	else if (up.pyrun) {
 		argv0 = up.pyrun;
 	}
 
@@ -258,7 +261,10 @@ void init_pyargv() {
 #endif
 
 	up.argc = 1;
-	if (up.argv) {
+	if (up.pymain) {
+		up.argc = up.pymain;
+	}
+	else if (up.argv) {
 		char *tmp_ptr = uwsgi_str(up.argv);
 #ifdef __sun__
                 // FIX THIS !!!
@@ -283,8 +289,30 @@ void init_pyargv() {
 
 	up.py_argv[0] = pname;
 
-
-	if (up.argv) {
+	if (up.pymain) {
+		int i = 0;
+		size_t len = 0;
+		for(i=0; i<up.argc; i++) {
+			len += strlen(uwsgi.argv[i])+1;
+		}
+#ifdef PYTHREE
+		wchar_t *wcargv = uwsgi_calloc(sizeof(wchar_t *) * len);
+#else
+		char *py_argv_copy = uwsgi_calloc(sizeof(char *) * len);
+#endif
+		for(i=0; i<up.argc; i++) {
+			ap = uwsgi.argv[i];
+#ifdef PYTHREE
+			//FIXME?
+			mbstowcs( wcargv + strlen(ap), ap, strlen(ap));
+			up.py_argv[i] = wcargv + strlen(ap);
+#else
+			up.py_argv[i] = strncpy(py_argv_copy, ap, strlen(ap)+1);
+			py_argv_copy += strlen(ap)+1;
+#endif
+		}
+	}
+	else if (up.argv) {
 
 		char *py_argv_copy = uwsgi_str(up.argv);
 		up.argc = 1;
@@ -312,7 +340,9 @@ void init_pyargv() {
 
 	}
 
-	PySys_SetArgv(up.argc, up.py_argv);
+	if (!up.pymain) {
+		PySys_SetArgv(up.argc, up.py_argv);
+	}
 
 	PyObject *sys_dict = get_uwsgi_pydict("sys");
 	if (!sys_dict) {
