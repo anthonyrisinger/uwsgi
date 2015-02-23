@@ -2354,6 +2354,8 @@ struct uwsgi_server {
 
 	// store the binary path
 	char *binary_path;
+	// number of args to consider part of binary_path
+	int binary_argc;
 
 	int is_a_reload;
 

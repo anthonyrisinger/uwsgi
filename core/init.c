@@ -62,6 +62,7 @@ void uwsgi_init_default() {
 
 	uwsgi.cpus = 1;
 	uwsgi.new_argc = -1;
+	uwsgi.binary_argc = 1;
 
 	uwsgi.backtrace_depth = 64;
 	uwsgi.max_apps = 64;
@@ -266,6 +267,10 @@ void uwsgi_commandline_config() {
 		argv = uwsgi.new_argv;
 	}
 
+	if (uwsgi.binary_argc != 1 && argc >= uwsgi.binary_argc) {
+		argc -= uwsgi.binary_argc - 1;
+		argv += uwsgi.binary_argc - 1;
+	}
 
 	char *optname;
 	while ((i = getopt_long(argc, argv, uwsgi.short_options, uwsgi.long_options, &uwsgi.option_index)) != -1) {
