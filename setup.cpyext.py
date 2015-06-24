@@ -17,10 +17,14 @@ from setuptools.command.build_ext import build_ext
 from distutils.core import Extension
 
 
-class uWSGIBuildExt(build_ext):
+UWSGI_MODULE = 'uwsgi'
+UWSGI_PLUGIN = 'pyuwsgi'
+UWSGI_EXTENSION = '_uwsgi'
+UWSGI_SCRIPT = '{0}={0}:run'.format(UWSGI_MODULE)
+UWSGI_PATH = 'plugins/{0}'.format(UWSGI_PLUGIN)
 
-    UWSGI_NAME = 'uwsgi'
-    UWSGI_PLUGIN = 'pyuwsgi'
+
+class uWSGIBuildExt(build_ext):
 
     def build_extensions(self):
         self.uwsgi_setup()
@@ -55,12 +59,12 @@ class uWSGIBuildExt(build_ext):
         # insert in the beginning so UWSGI_PYTHON_NOLIB is exported
         # before the python plugin compiles
         ep = config.get('embedded_plugins').split(',')
-        if self.UWSGI_PLUGIN in ep:
-            ep.remove(self.UWSGI_PLUGIN)
-        ep.insert(0, self.UWSGI_PLUGIN)
+        if UWSGI_PLUGIN in ep:
+            ep.remove(UWSGI_PLUGIN)
+        ep.insert(0, UWSGI_PLUGIN)
         config.set('embedded_plugins', ','.join(ep))
         config.set('as_shared_library', 'true')
-        config.set('bin_name', self.get_ext_fullpath(self.UWSGI_NAME))
+        config.set('bin_name', self.get_ext_fullpath(UWSGI_EXTENSION))
         try:
             os.makedirs(os.path.dirname(config.get('bin_name')))
         except OSError as e:
@@ -75,7 +79,7 @@ class uWSGIBuildExt(build_ext):
 
         # XXX: merge uwsgi_setup (see other comments)
         for ext in self.extensions:
-            if ext.name == self.UWSGI_NAME:
+            if ext.name == UWSGI_EXTENSION:
                 ext.sources = [s + '.c' for s in self.uwsgi_config.gcc_list]
                 ext.library_dirs = self.uwsgi_config.include_path[:]
                 ext.libraries = list()
@@ -96,23 +100,14 @@ class uWSGIBuildExt(build_ext):
                             ext.extra_compile_args.append(y)
 
 
-setup(
-    name='uWSGI',
-    license='GPL2',
-    version=uwsgiconfig.uwsgi_version,
-    author='Unbit',
-    author_email='info@unbit.it',
-    description='The uWSGI server',
-    cmdclass={
-        'build_ext': uWSGIBuildExt,
-        },
-    py_modules=[
-        'uwsgidecorators',
-        ],
-    ext_modules=[
-        Extension(uWSGIBuildExt.UWSGI_NAME, sources=[]),
-        ],
-    entry_points={
-        'console_scripts': ['uwsgi=%s:run' % uWSGIBuildExt.UWSGI_NAME],
-        },
-    )
+setup(name='uWSGI',
+      license='GPL2',
+      version=uwsgiconfig.uwsgi_version,
+      author='Unbit',
+      author_email='info@unbit.it',
+      description='The uWSGI server',
+      package_dir={'': UWSGI_PATH},
+      cmdclass={'build_ext': uWSGIBuildExt},
+      py_modules=['uwsgi', 'uwsgidecorators'],
+      ext_modules=[Extension(UWSGI_EXTENSION, sources=[])],
+      entry_points={'console_scripts': [UWSGI_SCRIPT]})
