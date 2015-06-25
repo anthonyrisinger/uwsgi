@@ -25,4 +25,4 @@ core/dot_h.c
 
 /build/
 /dist/
-/uWSGI.egg-info/
+uWSGI.egg-info/

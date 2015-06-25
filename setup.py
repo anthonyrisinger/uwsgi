@@ -105,6 +105,7 @@ setup(
     author='Unbit',
     author_email='info@unbit.it',
     license='GPL2',
+    package_dir={'': 'plugins/pyuwsgi'},
     py_modules=['uwsgidecorators'],
     distclass=uWSGIDistribution,
 )
